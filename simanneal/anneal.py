@@ -223,10 +223,10 @@ class Annealer(object):
                 if E < self.best_energy:
                     self.best_state = self.copy_state(self.state)
                     self.best_energy = E
-            # Stop improving if stagnation happens
-            if trials > 0 and (improves / trials) <= self.min_improve_ratio:
-                break
             if self.updates > 1:
+                # Stop improving if stagnation happens
+                if trials > 0 and (improves / trials) <= self.min_improve_ratio:
+                    break
                 if (step // updateWavelength) > ((step - 1) // updateWavelength):
                     self.update(
                         step, T, E, accepts / trials, improves / trials)
