@@ -115,6 +115,11 @@ class Annealer(object):
                                'the self.copy_strategy "%s"' %
                                self.copy_strategy)
 
+    def state_changed(self, E):
+        """Hook that is fired when self.state is changed by the annealing method
+        Suitable for recalculating internal cached values when appropriate in your Annealer."""
+        pass
+
     def update(self, *args, **kwargs):
         """Wrapper for internal update.
 
@@ -212,6 +217,7 @@ class Annealer(object):
                 # Restore previous state
                 self.state = self.copy_state(prevState)
                 E = prevEnergy
+                self.state_changed(E)
             else:
                 # Accept new state and compare to best state
                 accepts += 1
