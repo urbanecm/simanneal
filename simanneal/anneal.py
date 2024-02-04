@@ -39,6 +39,7 @@ class Annealer(object):
     Tmax = 25000.0
     Tmin = 2.5
     steps = 50000
+    inner_steps = 1
     updates = 100
     copy_strategy = 'deepcopy'
     user_exit = False
@@ -93,6 +94,7 @@ class Annealer(object):
         """
         self.Tmax = schedule['tmax']
         self.Tmin = schedule['tmin']
+        self.inner_steps = int(schedule['inner_steps'])
         self.steps = int(schedule['steps'])
         self.updates = int(schedule['updates'])
 
@@ -201,27 +203,32 @@ class Annealer(object):
         while step < self.steps and not self.user_exit:
             step += 1
             T = self.Tmax * math.exp(Tfactor * step / self.steps)
-            dE = self.move()
-            if dE is None:
-                E = self.energy()
-                dE = E - prevEnergy
-            else:
-                E += dE
-            trials += 1
-            if dE > 0.0 and math.exp(-dE / T) < random.random():
-                # Restore previous state
-                self.state = self.copy_state(prevState)
-                E = prevEnergy
-            else:
-                # Accept new state and compare to best state
-                accepts += 1
-                if dE < 0.0:
-                    improves += 1
-                prevState = self.copy_state(self.state)
-                prevEnergy = E
-                if E < self.best_energy:
-                    self.best_state = self.copy_state(self.state)
-                    self.best_energy = E
+
+            inner_step = 0
+            while inner_step < self.inner_steps:
+                dE = self.move()
+                if dE is None:
+                    E = self.energy()
+                    dE = E - prevEnergy
+                else:
+                    E += dE
+                trials += 1
+                if dE > 0.0 and math.exp(-dE / T) < random.random():
+                    # Restore previous state
+                    self.state = self.copy_state(prevState)
+                    E = prevEnergy
+                else:
+                    # Accept new state and compare to best state
+                    accepts += 1
+                    if dE < 0.0:
+                        improves += 1
+                    prevState = self.copy_state(self.state)
+                    prevEnergy = E
+                    if E < self.best_energy:
+                        self.best_state = self.copy_state(self.state)
+                        self.best_energy = E
+                inner_step += 1
+
             if self.updates > 1:
                 if (step // updateWavelength) > ((step - 1) // updateWavelength):
                     self.update(
@@ -311,4 +318,4 @@ class Annealer(object):
         duration = round_figures(int(60.0 * minutes * step / elapsed), 2)
 
         # Don't perform anneal, just return params
-        return {'tmax': Tmax, 'tmin': Tmin, 'steps': duration, 'updates': self.updates}
+        return {'tmax': Tmax, 'tmin': Tmin, 'steps': duration, 'updates': self.updates, 'steps_inner': 1}
